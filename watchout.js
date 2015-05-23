@@ -56,10 +56,10 @@ var Playa = function() {
                      .attr('d', playaObj.path)
                      .attr('fill', playaObj.fill);
 
-    playaObj.move = {
+    playaObj.move({
       x: playaObj.gameOptions.width * 0.5,
       y: playaObj.gameOptions.width * 0.5
-    };
+    });
 
     playaObj.setupDragging();
   };
@@ -106,14 +106,14 @@ var Playa = function() {
     if (!locationObject.y) {
       playaObj.setY(playaObj.y)
     } else {
-      playaObj.setY(locationObject.x);
+      playaObj.setY(locationObject.y);
     }
 
   // rotates player egg
-    playaElement.attr('transform',
-      "rotate(#{@angle},#{@getX()},#{@getY()}) " +
+    playaObj.playaElement.attr('transform',
+      // "rotate(#{@angle},#{@getX()},#{@getY()}) " +
 
-      "translate(#{@getX()},#{@getY()})");
+      "translate(" + playaObj.getX() + ", " + playaObj.getY() +")");
   };
 
   playaObj.moveAbsolute = function (x, y) {
