@@ -2,7 +2,7 @@
 var gameOptions = {
   height: 450,
   width: 700,
-  nEnemies: 3,
+  nEnemies: 20,
   padding: 20
 };
 
@@ -34,11 +34,21 @@ var createEnemies = function () {
   });
 };
 
+var updateScore = function() {
+  d3.select('.current span')
+    .text(gameStats.score.toString())
+};
+
+var updateBestScore = function() {
+  gameStats.bestScore = _.max([gameStats.bestScore, gameStats.score]);
+  d3.select('.high span').text(gameStats.bestScore.toString());
+};
+
 var Playa = function() {
   var playaObj = {};
 
-  playaObj.path = 'm-7.5,1.62413c0,-5.04095 4.08318,-9.12413 9.12414,-9.12413c5.04096,0 9.70345,5.53145 11.87586,9.12413c-2.02759,2.72372 -6.8349,9.12415 -11.87586,9.12415c-5.04096,0 -9.12414,-4.08318 -9.12414,-9.12415z';
-  playaObj.fill = 'yellow';
+  // playaObj.path = 'm-7.5,1.62413c0,-5.04095 4.08318,-9.12413 9.12414,-9.12413c5.04096,0 9.70345,5.53145 11.87586,9.12413c-2.02759,2.72372 -6.8349,9.12415 -11.87586,9.12415c-5.04096,0 -9.12414,-4.08318 -9.12414,-9.12415z';
+  // playaObj.fill = 'yellow';
   playaObj.x = 0;
   playaObj.y = 0;
   playaObj.angle = 0;
@@ -52,9 +62,12 @@ var Playa = function() {
   playaObj.render = function(destination) {
     playaObj.setOptions(gameOptions);
 
-    playaObj.playaElement = destination.append('svg:path')
-                     .attr('d', playaObj.path)
-                     .attr('fill', playaObj.fill);
+    playaObj.playaElement = destination.append('svg:image')
+                     // .attr('d', playaObj.path)
+                     .attr('xlink:href', "ninja.gif")
+                      // .attr('fill', playaObj.fill);
+                     .attr("height", 100)
+                     .attr("width", 100);
 
     playaObj.move({
       x: playaObj.gameOptions.width * 0.5,
@@ -142,24 +155,93 @@ var Playa = function() {
   return playaObj;
 };
 
+
+
+
+
 var render = function(enemy_data) {
-  var enemies = gameBoard.selectAll('circle.enemy')
+  var enemies = gameBoard.selectAll('image.enemy')
                 .data(enemy_data, function(d){return d.id});
 
   enemies.enter()
-    .append('svg:circle')
-    .attr('class', 'enemy')
-    .attr('cx', function(enemy) {return axes.x(enemy.x);})
-    .attr('cy', function(enemy) {return axes.y(enemy.y);})
-    // .attr('cx', 50)
-    .attr('color', "red")
-    .attr('r', 5);
+  .append('svg:image')
+  .attr("xlink:href", "shuriken.png")
+  .attr("height", "20")
+  .attr("width", "20")
+  .attr('class', 'enemy')
+  .attr('x', function(enemy) {return axes.x(enemy.x);})
+  .attr('y', function(enemy) {return axes.y(enemy.y);});
+  // .attr('cx', 50)
 
+  var checkCollision = function(enemy, collidedCallback) {
+    // debugger;
+    _.each(players, function(player) {
+      var radiusSum = parseFloat(enemy.attr('r')) + player.r;
+      var xDiff = parseFloat(enemy.attr('x')) - player.x;
+      var yDiff = parseFloat(enemy.attr('y')) - player.y;
+
+      var separation = Math.sqrt( Math.pow(xDiff,2) + Math.pow(yDiff,2) );
+
+      if (separation < radiusSum) {
+        collidedCallback(player, enemy);
+      }
+    });
+  };
+
+  var onCollision = function(){
+    updateBestScore();
+    gameStats.score = 0;
+    updateScore();
+  };
+
+  var tweenWithCollisionDetection = function(endData) {
+    var enemy = d3.select(this);
+
+    var startPos = {
+      x: parseFloat(enemy.attr('x')),
+      y: parseFloat(enemy.attr('y'))
+    };
+
+    var endPos = {
+      x: axes.x(endData.x),
+      y: axes.y(endData.y)
+    };
+
+    return function(timestep) {
+      checkCollision(enemy, onCollision);
+
+      var enemyNextPos = {
+        x: startPos.x + (endPos.x - startPos.x)*timestep,
+        y: startPos.y + (endPos.y - startPos.y)*timestep
+      }
+
+
+      // enemy.transition()
+      //   .attr('x', enemyNextPos.x)
+      //   .attr('y', enemyNextPos.y)
+      //   .duration(2000);
+      debugger;
+      enemy.transition()
+        .attr('x', enemyNextPos.x)
+        .attr('y', enemyNextPos.y)
+        .duration(2000);
+
+    }
+  };
+
+  enemies
+   // .transition()
+   //   .duration(500)
+   //   .attr('r', 10)
+  .transition()
+    .duration(2000)
+    .tween('custom', tweenWithCollisionDetection);
 };
 
 var play = function (){
 
   var gameTurn = function() {
+
     var newEnemyPositions = createEnemies();
     // console.log(newEnemyPositions);
     render(newEnemyPositions);
@@ -168,7 +250,7 @@ var play = function (){
 
   var increaseScore = function() {
     gameStats.score += 1;
-    // updateScore();
+    updateScore();
   };
 
   gameTurn();
@@ -181,8 +263,10 @@ var play = function (){
 
 };
 
+
 var players = [];
 var myPlayer = Playa();
-players.push(myPlayer.render(gameBoard));
+myPlayer.render(gameBoard);
+players.push(myPlayer);
 play();
 
