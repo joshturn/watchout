@@ -2,7 +2,7 @@
 var gameOptions = {
   height: 450,
   width: 700,
-  nEnemies: 20,
+  nEnemies: 2,
   padding: 20
 };
 
@@ -51,8 +51,6 @@ var Playa = function() {
   // playaObj.fill = 'yellow';
   playaObj.x = 0;
   playaObj.y = 0;
-  playaObj.angle = 0;
-  playaObj.r = 5;
 
   playaObj.setOptions = function(gameOptions) {
     playaObj.gameOptions = gameOptions;
@@ -108,7 +106,6 @@ var Playa = function() {
   };
 
   playaObj.move = function(locationObject) {
-    playaObj.angle = locationObject.angle || playaObj.angle;
 
     if (!locationObject.x) {
       playaObj.setX(playaObj.x);
@@ -144,6 +141,7 @@ var Playa = function() {
   };
 
   playaObj.setupDragging = function() {
+    // debugger;
     var dragMove = function () {
       playaObj.moveRelative(d3.event.dx, d3.event.dy);
     };
@@ -154,10 +152,6 @@ var Playa = function() {
 
   return playaObj;
 };
-
-
-
-
 
 var render = function(enemy_data) {
   var enemies = gameBoard.selectAll('image.enemy')
@@ -176,15 +170,18 @@ var render = function(enemy_data) {
   var checkCollision = function(enemy, collidedCallback) {
     // debugger;
     _.each(players, function(player) {
-      var radiusSum = parseFloat(enemy.attr('r')) + player.r;
-      var xDiff = parseFloat(enemy.attr('x')) - player.x;
-      var yDiff = parseFloat(enemy.attr('y')) - player.y;
-
-      var separation = Math.sqrt( Math.pow(xDiff,2) + Math.pow(yDiff,2) );
-
-      if (separation < radiusSum) {
+      var shurikenHeight = enemy.attr('height');
+      var shurikenWidth = enemy.attr('width');
+      var ninjaHeight = player.playaElement.attr('height');
+      var ninjaWidth = player.playaElement.attr('width');
+          // debugger;
+      if (enemy.attr('x') < player.x + ninjaWidth &&
+          enemy.attr('x') + shurikenWidth > player.x &&
+          enemy.attr('y') < player.y + ninjaHeight &&
+          shurikenHeight + enemy.attr('y') > player.y) {
         collidedCallback(player, enemy);
       }
+      //var separation = Math.sqrt( Math.pow(xDiff,2) + Math.pow(yDiff,2) );
     });
   };
 
@@ -220,10 +217,14 @@ var render = function(enemy_data) {
       //   .attr('x', enemyNextPos.x)
       //   .attr('y', enemyNextPos.y)
       //   .duration(2000);
-      debugger;
+
+      var randomX = Math.random() * gameOptions.width;
+      var randomY = Math.random() * gameOptions.height;
+
+      // debugger;
       enemy.transition()
-        .attr('x', enemyNextPos.x)
-        .attr('y', enemyNextPos.y)
+        .attr('x', randomX)
+        .attr('y', randomY)
         .duration(2000);
 
     }
